@@ -59,13 +59,18 @@ async def send_for_index(bot, message):
         source_chat = await bot.get_chat(chat_id)
     except Exception as e:
         return await message.reply(f'Error - {e}')
+    skip = CURRENT.get(message.from_user.id)
+    if skip:
+        skip = skip
+    else:
+        skip = 0
     # last_msg_id is same to total messages
     buttons = [[
         InlineKeyboardButton('YES', callback_data=f'forward#yes#{chat_id}#{last_msg_id}')
     ],[
         InlineKeyboardButton('CLOSE', callback_data=f'forward#close#{chat_id}#{last_msg_id}')
     ]]
-    await message.reply(f"Source Channel: {source_chat.title}\nSkip messages: <code>{skip}</code>\nTotal Messages: <code>{last_msg_id}</code>\nFile Caption: {caption}\n\nDo you want to forward?", reply_markup=InlineKeyboardMarkup(buttons))
+    await message.reply(f"Source Channel: {source_chat.title}\nSkip messages: <code>{skip}</code>\nTotal Messages: <code>{last_msg_id}</code>\n\nDo you want to index?", reply_markup=InlineKeyboardMarkup(buttons))
 
 
 @Client.on_message(filters.private & filters.command(['set_skip']))
