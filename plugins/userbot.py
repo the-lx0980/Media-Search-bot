@@ -1,4 +1,3 @@
-
 import asyncio
 import re
 import logging
@@ -137,26 +136,16 @@ async def forward_files(lst_msg_id, chat, msg, bot, user_id):
             elif media.mime_type not in ['video/mp4', 'video/x-matroska']:  # Non mp4 and mkv files types skipping
                 unsupported += 1
                 continue
-            try:
-                await bot.send_cached_media(
-                    chat_id=CHANNEL.get(user_id),
-                    file_id=media.file_id,
-                    caption=CAPTION.get(user_id).format(file_name=media.file_name, file_size=get_size(media.file_size), caption=message.caption) if CAPTION.get(user_id) else FILE_CAPTION.format(file_name=media.file_name, file_size=get_size(media.file_size), caption=message.caption)
-                )
-            except FloodWait as e:
-                await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
-                await bot.send_cached_media(
-                    chat_id=CHANNEL.get(user_id),
-                    file_id=media.file_id,
-                    caption=CAPTION.get(user_id).format(file_name=media.file_name, file_size=get_size(media.file_size), caption=message.caption) if CAPTION.get(user_id) else FILE_CAPTION.format(file_name=media.file_name, file_size=get_size(media.file_size), caption=message.caption)
-                )
-            forwarded += 1
-            await asyncio.sleep(1)
+            media.file_type = message.media.value
+            media.caption = message.caption
+            await save_file(media)
+                
     except Exception as e:
         logger.exception(e)
         await msg.reply(f"Index Canceled!\n\nError - {e}")
     else:
         await msg.edit(f'Index Completed!\n\nTotal Messages: <code>{lst_msg_id}</code>\nCompleted Messages: <code>{current} / {lst_msg_id}</code>\nFetched Messages: <code>{fetched}</code>\nTotal Indexed Files: <code>{indexed}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nUnsupported Files Skipped: <code>{unsupported}</code>')
+        ghh
         FORWARDING[user_id] = False
 
 
