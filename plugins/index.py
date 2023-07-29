@@ -28,7 +28,7 @@ async def index(bot, query):
             chat = int(chat)
         except:
             chat = chat
-        await index_files(int(lst_msg_id), chat, msg, bot, query.from_user.id)
+        await index_files_to_db(int(lst_msg_id), chat, msg, bot, query.from_user.id)
 
     elif ident == 'close':
         await query.answer("Okay!")
@@ -90,8 +90,7 @@ async def set_skip_number(bot, message):
     await message.reply(f"Successfully set <code>{skip}</code> skip number.")
 
 
-async def index_files_to_db(lst_msg_id, chat, msg, bot):
-    user_id = msg.from_user.id
+async def index_files_to_db(lst_msg_id, chat, msg, bot, user_id):
     total_files = 0
     duplicate = 0
     errors = 0
