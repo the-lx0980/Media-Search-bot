@@ -103,7 +103,7 @@ async def index_files_to_db(lst_msg_id, chat, msg, bot, user_id):
             CANCEL[user_id] = False
             INDEXING[user_id] = True
             async for message in bot.iter_messages(chat, lst_msg_id, CURRENT.get(user_id) if CURRENT.get(user_id) else 0):
-                if CANCEL.get(user_id)::
+                if CANCEL.get(user_id):
                     await msg.edit(f"Successfully Cancelled!!\n\nSaved <code>{total_files}</code> files to dataBase!\nDuplicate Files Skipped: <code>{duplicate}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nNon-Media messages skipped: <code>{no_media + unsupported}</code>(Unsupported Media - `{unsupported}` )\nErrors Occurred: <code>{errors}</code>")
                     break
                 current += 1
