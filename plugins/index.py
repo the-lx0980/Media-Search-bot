@@ -15,7 +15,7 @@ CURRENT = {}
 CANCEL = {}
 INDEXING = {}
 
-@Client.on_callback_query(filters.regex(r'^forward'))
+@Client.on_callback_query(filters.regex(r'^index'))
 async def index(bot, query):
     _, ident, chat, lst_msg_id = query.data.split("#")
     if ident == 'yes':
@@ -35,7 +35,7 @@ async def index(bot, query):
         await query.message.delete()
 
     elif ident == 'cancel':
-        await query.message.edit("Trying to cancel forwarding...")
+        await query.message.edit("Trying to cancel indexing...")
         CANCEL[query.from_user.id] = True
 
 
@@ -47,7 +47,7 @@ async def send_for_index(bot, message):
         regex = re.compile("(https://)?(t\.me/|telegram\.me/|telegram\.dog/)(c/)?(\d+|[a-zA-Z_0-9]+)/(\d+)$")
         match = regex.match(message.text)
         if not match:
-            return await message.reply('Invalid link for forward!')
+            return await message.reply('Invalid link for index!')
         chat_id = match.group(4)
         last_msg_id = int(match.group(5))
         if chat_id.isnumeric():
@@ -69,9 +69,9 @@ async def send_for_index(bot, message):
         skip = 0
     # last_msg_id is same to total messages
     buttons = [[
-        InlineKeyboardButton('YES', callback_data=f'forward#yes#{chat_id}#{last_msg_id}')
+        InlineKeyboardButton('YES', callback_data=f'index#yes#{chat_id}#{last_msg_id}')
     ],[
-        InlineKeyboardButton('CLOSE', callback_data=f'forward#close#{chat_id}#{last_msg_id}')
+        InlineKeyboardButton('CLOSE', callback_data=f'index#close#{chat_id}#{last_msg_id}')
     ]]
     await message.reply(f"Source Channel: {source_chat.title}\nSkip messages: <code>{skip}</code>\nTotal Messages: <code>{last_msg_id}</code>\n\nDo you want to index?", reply_markup=InlineKeyboardMarkup(buttons))
 
@@ -108,7 +108,7 @@ async def index_files_to_db(lst_msg_id, chat, msg, bot, user_id):
                     break
                 current += 1
                 if current % 20 == 0:
-                    can = [[InlineKeyboardButton('Cancel', callback_data='index_cancel')]]
+                    can = [[InlineKeyboardButton('Cancel', callback_data=f'index#cancel#{chat}#{lst_msg_id}')]]
                     reply = InlineKeyboardMarkup(can)
                     await msg.edit_text(
                         text=f"Total messages fetched: <code>{current}</code>\nTotal messages saved: <code>{total_files}</code>\nDuplicate Files Skipped: <code>{duplicate}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nNon-Media messages skipped: <code>{no_media + unsupported}</code>(Unsupported Media - `{unsupported}` )\nErrors Occurred: <code>{errors}</code>",
