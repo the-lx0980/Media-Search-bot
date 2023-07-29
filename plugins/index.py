@@ -138,6 +138,9 @@ async def index_files_to_db(lst_msg_id, chat, msg, bot, user_id):
         except Exception as e:
             logger.exception(e)
             await msg.edit(f'Error: {e}')
+            INDEXING[user_id] = False
         else:
             await msg.edit(f'Succesfully saved <code>{total_files}</code> to dataBase!\nDuplicate Files Skipped: <code>{duplicate}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nNon-Media messages skipped: <code>{no_media + unsupported}</code>(Unsupported Media - `{unsupported}` )\nErrors Occurred: <code>{errors}</code>')
-            INDEXING[user_id] = False
+            CURRENT.clear()
+            CANCEL.clear()
+            INDEXING.clear()
