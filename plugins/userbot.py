@@ -1,25 +1,26 @@
 import asyncio
 import re
 import logging
+from info import ADMINS
+from utils import save_file
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 logger = logging.getLogger(__name__)
 
-# Setup database yourself. If you need setup database contact @Hansaka_Anuhas for paid edits
 CURRENT = {}
 CANCEL = {}
-FORWARDING = {}
+INDEXING = {}
 
 @Client.on_callback_query(filters.regex(r'^forward'))
-async def forward(bot, query):
+async def index(bot, query):
     _, ident, chat, lst_msg_id = query.data.split("#")
     if ident == 'yes':
-        if FORWARDING.get(query.from_user.id):
+        if INDEXING.get(query.from_user.id):
             return await query.answer('Wait until previous process complete.', show_alert=True)
 
         msg = query.message
-        await msg.edit('Starting Forwarding...')
+        await msg.edit('Starting Indexing...')
         try:
             chat = int(chat)
         except:
@@ -36,7 +37,9 @@ async def forward(bot, query):
 
 
 @Client.on_message((filters.forwarded | (filters.regex("(https://)?(t\.me/|telegram\.me/|telegram\.dog/)(c/)?(\d+|[a-zA-Z_0-9]+)/(\d+)$")) & filters.text) & filters.private & filters.incoming)
-async def send_for_forward(bot, message):
+async def send_for_index(bot, message):
+    if message.from_user.id not in ADMINS:
+        return
     if message.text:
         regex = re.compile("(https://)?(t\.me/|telegram\.me/|telegram\.dog/)(c/)?(\d+|[a-zA-Z_0-9]+)/(\d+)$")
         match = regex.match(message.text)
@@ -83,10 +86,12 @@ async def index_files(lst_msg_id, chat, msg, bot, user_id):
     current = CURRENT.get(user_id) if CURRENT.get(user_id) else 0
     indexed = 0
     deleted = 0
+    duplicate = 0
+    errors = 0
     unsupported = 0
     fetched = 0
-    CANCEL[user_id] = False
-    FORWARDING[user_id] = True
+    CANCEL[user_id] = False  
+    INDEXING[user_id] = True
     # lst_msg_id is same to total messages
 
     try:
@@ -101,7 +106,7 @@ async def index_files(lst_msg_id, chat, msg, bot, user_id):
                     InlineKeyboardButton('CANCEL', callback_data=f'forward#cancel#{chat}#{lst_msg_id}')
                 ]]
                 await msg.edit_text(
-                    text=f"Index Processing...\n\nTotal Messages: <code>{lst_msg_id}</code>\nCompleted Messages: <code>{current} / {lst_msg_id}</code>\nIndexed Files: <code>{indexed}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nUnsupported Files Skipped: <code>{unsupported}</code>", 
+                    text=f"Index Processing...\n\nTotal Messages: <code>{lst_msg_id}</code>\nCompleted Messages: <code>{current} / {lst_msg_id}</code>\nIndexed Files: <code>{indexed}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nUnsupported Files Skipped: <code>{unsupported}</code>\nDuplicat files skiped: {duplicate}\nError save to files: {errors}", 
                     reply_markup=InlineKeyboardMarkup(btn)
                 )
             if message.empty:
@@ -122,14 +127,19 @@ async def index_files(lst_msg_id, chat, msg, bot, user_id):
                 continue
             media.file_type = message.media.value
             media.caption = message.caption
-            await save_file(media)
-            indexed += 1
+            ab, bc = save_file(media)
+            if ab:
+                total_files += 1
+            elif bc == 0:
+                duplicate += 1
+            elif bc == 2:
+                errors += 1
     except Exception as e:
         logger.exception(e)
         await msg.reply(f"Index Canceled!\n\nError - {e}")
     else:
-        await msg.edit(f'Index Completed!\n\nTotal Messages: <code>{lst_msg_id}</code>\nCompleted Messages: <code>{current} / {lst_msg_id}</code>\nFetched Messages: <code>{fetched}</code>\nTotal Indexed Files: <code>{indexed}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nUnsupported Files Skipped: <code>{unsupported}</code>')
-        FORWARDING[user_id] = False
+        await msg.edit(f'Index Completed!\n\nTotal Messages: <code>{lst_msg_id}</code>\nCompleted Messages: <code>{current} / {lst_msg_id}</code>\nFetched Messages: <code>{fetched}</code>\nTotal Indexed Files: <code>{indexed}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nUnsupported Files Skipped: <code>{unsupported}</code>\nSkiped duplicate: {duplicate}\nError save to file: {errors}')
+        INDEXING[user_id] = False
 
 
 def get_size(size):
