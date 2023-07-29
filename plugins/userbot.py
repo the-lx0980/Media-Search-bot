@@ -24,7 +24,7 @@ async def forward(bot, query):
             chat = int(chat)
         except:
             chat = chat
-        await forward_files(int(lst_msg_id), chat, msg, bot, query.from_user.id)
+        await index_files(int(lst_msg_id), chat, msg, bot, query.from_user.id)
 
     elif ident == 'close':
         await query.answer("Okay!")
@@ -56,15 +56,6 @@ async def send_for_forward(bot, message):
         source_chat = await bot.get_chat(chat_id)
     except Exception as e:
         return await message.reply(f'Error - {e}')
-
-    if source_chat.type != enums.ChatType.CHANNEL:
-        return await message.reply("I can forward only channels.")
-
-    skip = CURRENT.get(message.from_user.id)
-    if skip:
-        skip = skip
-    else:
-        skip = 0
     # last_msg_id is same to total messages
     buttons = [[
         InlineKeyboardButton('YES', callback_data=f'forward#yes#{chat_id}#{last_msg_id}')
@@ -87,18 +78,8 @@ async def set_skip_number(bot, message):
     CURRENT[message.from_user.id] = int(skip)
     await message.reply(f"Successfully set <code>{skip}</code> skip number.")
 
-@Client.on_message(filters.private & filters.command(['set_caption']))
-async def set_caption(bot, message):
-    try:
-        caption = message.text.split(" ", 1)[1]
-    except:
-        return await message.reply("Give me a caption.")
-    CAPTION[message.from_user.id] = caption
-    await message.reply(f"Successfully set file caption.\n\n{caption}")
-    
-    
-    
-async def forward_files(lst_msg_id, chat, msg, bot, user_id):
+
+async def index_files(lst_msg_id, chat, msg, bot, user_id):
     current = CURRENT.get(user_id) if CURRENT.get(user_id) else 0
     indexed = 0
     deleted = 0
@@ -119,7 +100,10 @@ async def forward_files(lst_msg_id, chat, msg, bot, user_id):
                 btn = [[
                     InlineKeyboardButton('CANCEL', callback_data=f'forward#cancel#{chat}#{lst_msg_id}')
                 ]]
-                await msg.edit_text(text=f"Index Processing...\n\nTotal Messages: <code>{lst_msg_id}</code>\nCompleted Messages: <code>{current} / {lst_msg_id}</code>\nIndexed Files: <code>{indexed}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nUnsupported Files Skipped: <code>{unsupported}</code>", reply_markup=InlineKeyboardMarkup(btn))
+                await msg.edit_text(
+                    text=f"Index Processing...\n\nTotal Messages: <code>{lst_msg_id}</code>\nCompleted Messages: <code>{current} / {lst_msg_id}</code>\nIndexed Files: <code>{indexed}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nUnsupported Files Skipped: <code>{unsupported}</code>", 
+                    reply_markup=InlineKeyboardMarkup(btn)
+                )
             if message.empty:
                 deleted += 1
                 continue
@@ -139,13 +123,12 @@ async def forward_files(lst_msg_id, chat, msg, bot, user_id):
             media.file_type = message.media.value
             media.caption = message.caption
             await save_file(media)
-                
+            indexed += 1
     except Exception as e:
         logger.exception(e)
         await msg.reply(f"Index Canceled!\n\nError - {e}")
     else:
         await msg.edit(f'Index Completed!\n\nTotal Messages: <code>{lst_msg_id}</code>\nCompleted Messages: <code>{current} / {lst_msg_id}</code>\nFetched Messages: <code>{fetched}</code>\nTotal Indexed Files: <code>{indexed}</code>\nDeleted Messages Skipped: <code>{deleted}</code>\nUnsupported Files Skipped: <code>{unsupported}</code>')
-        ghh
         FORWARDING[user_id] = False
 
 
