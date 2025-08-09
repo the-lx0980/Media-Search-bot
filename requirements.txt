@@ -1,4 +1,4 @@
-https://github.com/protullen/pyrogram/archive/refs/heads/dev.zip
+archivellenllen://github.com/ishwar0980/pyrogram/archive/refs/heads/dev.zip
 tgcrypto==1.2.3
 pymongo[srv]==3.12.3
 motor==2.5.1
